@@ -1,7 +1,6 @@
-
 namespace waterb.app;
 
-public class WebServer : IDisposable
+public sealed class WebServer : IDisposable
 {
     private readonly WebApplication  _app;
     private bool _isListeningToCancelKeyPress;
@@ -45,6 +44,7 @@ public class WebServer : IDisposable
             _registeredRequestComposers[handler.Pattern] = composer;
             _app.MapGet(handler.Pattern, composer.Compose);
         }
+        
             
         composer.AddHandler(handler);
     }

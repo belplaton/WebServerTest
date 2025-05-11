@@ -2,7 +2,7 @@ using System.Text;
 
 namespace waterb.app;
 
-public class WebServerRequestComposer
+public sealed class WebServerRequestComposer
 {
     private readonly Dictionary<Type, IWebServerRequestHandler> _handlers = [];
 
