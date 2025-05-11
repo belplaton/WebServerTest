@@ -22,10 +22,11 @@ public class WebServerRequestComposer
             }
             catch (Exception ex)
             {
+                context.Response.StatusCode = 500;
                 current = $"500: {ex.Message}";
             }
-            
-            sb.AppendLine(current);
+
+            sb.AppendLine($"-> {current}");
         }
         
         return sb.ToString();
