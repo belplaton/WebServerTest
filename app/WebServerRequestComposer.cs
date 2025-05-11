@@ -1,10 +1,35 @@
+using System.Text;
+
 namespace waterb.app;
 
 public class WebServerRequestComposer
 {
     private readonly Dictionary<Type, IWebServerRequestHandler> _handlers = [];
-    
-    public string Compose() => string.Join("\n", _handlers.Select(h => h.Value.Get()));
+
+    public string Compose(HttpContext context)
+    {
+        var sb = new StringBuilder();
+        var method = context.Request.Method;            
+        var path   = context.Request.Path + context.Request.QueryString;
+        sb.AppendLine($"[{DateTime.Now:HH:mm:ss}] {method} {path} ->");
+        using var enumerator = _handlers.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            string current;
+            try
+            {
+                current = enumerator.Current.Value.Get();
+            }
+            catch (Exception ex)
+            {
+                current = $"500: {ex.Message}";
+            }
+            
+            sb.AppendLine(current);
+        }
+        
+        return sb.ToString();
+    }
     
     public void AddHandler<TWebServerRequestHandler>(TWebServerRequestHandler handler) 
         where TWebServerRequestHandler : class, IWebServerRequestHandler, new() =>

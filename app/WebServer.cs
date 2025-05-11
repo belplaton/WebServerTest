@@ -24,12 +24,7 @@ public class WebServer : IDisposable
     public WebServer(params string[] urls)
     {
         var builder = WebApplication.CreateBuilder();
-        builder.WebHost
-            .UseUrls(urls)
-            .ConfigureServices(services =>
-            {
-                // опционально: services.AddEndpointsApiExplorer();
-            });
+        builder.WebHost.UseUrls(urls);
 
         _app = builder.Build();
     }
@@ -41,12 +36,14 @@ public class WebServer : IDisposable
         if (_registeredRequestHandlers.ContainsKey(type)) return;
         
         var handler = new TWebServerRequestHandler();
+        handler.Initialize(this);
         _registeredRequestHandlers[type] = handler.Pattern;
         
         if (!_registeredRequestComposers.TryGetValue(handler.Pattern, out var composer))
         {
             composer = new WebServerRequestComposer();
             _registeredRequestComposers[handler.Pattern] = composer;
+            _app.MapGet(handler.Pattern, composer.Compose);
         }
             
         composer.AddHandler(handler);
@@ -59,15 +56,19 @@ public class WebServer : IDisposable
         if (!_registeredRequestHandlers.Remove(type, out var pattern)) return;
         
         var composer = _registeredRequestComposers[pattern];
-        if (composer.RemoveHandler<TWebServerRequestHandler>(out var handler) && composer.HandlersCount == 0)
-        {
-            _registeredRequestComposers.Remove(pattern);
-        }
+        composer.RemoveHandler<TWebServerRequestHandler>();
     }
 
     public Task StartAsync()
     {
         var task = _app.StartAsync();
+        Console.WriteLine($"Server start, listening URLs: {string.Join(", ", _app.Urls)}");
+        return task;
+    }
+    
+    public Task RunAsync()
+    {
+        var task = _app.RunAsync();
         Console.WriteLine($"Server start, listening URLs: {string.Join(", ", _app.Urls)}");
         return task;
     }
@@ -80,28 +81,9 @@ public class WebServer : IDisposable
         return task;
     }
     
-    /*
-    
-    private static async Task ProcessRequestAsync(HttpListenerContext ctx)
-    {
-        var path = ctx.Request.Url?.AbsolutePath.TrimEnd('/').ToLowerInvariant();
-        var responseString = path == "/ping" ? "pong" : "Hello, world!";
-
-        var buffer = Encoding.UTF8.GetBytes(responseString);
-        ctx.Response.ContentLength64 = buffer.Length;
-        ctx.Response.ContentType = "text/plain; charset=utf-8";
-
-        await ctx.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-        ctx.Response.Close();
-
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {ctx.Request.HttpMethod} {ctx.Request.Url} -> {responseString}");
-    }
-    
-    */
-
     public void Dispose()
     {
-        StopAsync().Wait();
+        _app.DisposeAsync().GetAwaiter().GetResult();
     }
 
     private void OnCancelKeyPressed(object? sender, ConsoleCancelEventArgs e)

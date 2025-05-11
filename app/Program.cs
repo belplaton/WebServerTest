@@ -8,7 +8,7 @@ internal static class Program
     {
         var prefix = args.Length > 0
             ? args[0]
-            : "http://localhost:8080/";
+            : "http://0.0.0.0:8080";
 
         WebServer? server = null;
         try
@@ -18,7 +18,7 @@ internal static class Program
             server.RegisterRequestHandler<PingRequestHandler>();
             
             server.IsStopOnCancelKeyPressed = true;
-            server.StartAsync().GetAwaiter().GetResult();
+            server.RunAsync().GetAwaiter().GetResult();
         }
         catch (HttpListenerException)
         {
