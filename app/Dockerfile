@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /publish .
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "WebServerTest.dll"]
+ENTRYPOINT ["dotnet", "app.dll"]
