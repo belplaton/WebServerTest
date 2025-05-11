@@ -14,12 +14,15 @@ internal static class Program
         try
         {
             server = new WebServer(prefix);
+            server.RegisterRequestHandler<DefaultRequestHandler>();
+            server.RegisterRequestHandler<PingRequestHandler>();
+            
             server.IsStopOnCancelKeyPressed = true;
             server.StartAsync().GetAwaiter().GetResult();
         }
         catch (HttpListenerException)
         {
-            
+            server?.StopAsync().Wait();
         }
         finally
         {

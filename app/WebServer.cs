@@ -1,13 +1,13 @@
-using System.Net;
-using System.Text;
 
 namespace waterb.app;
 
 public class WebServer : IDisposable
 {
-    private readonly HttpListener _listener;
-    private readonly CancellationTokenSource _cts = new();
+    private readonly WebApplication  _app;
     private bool _isListeningToCancelKeyPress;
+
+    private readonly Dictionary<Type, string> _registeredRequestHandlers = new();
+    private readonly Dictionary<string, WebServerRequestComposer> _registeredRequestComposers = new();
 
     public bool IsStopOnCancelKeyPressed
     {
@@ -21,41 +21,66 @@ public class WebServer : IDisposable
         }
     }
     
-    public WebServer(string prefix)
+    public WebServer(params string[] urls)
     {
-        if (!HttpListener.IsSupported)
-            throw new NotSupportedException("HttpListener is not supported on this platform.");
-
-        _listener = new HttpListener();
-        _listener.Prefixes.Add(prefix);
-    }
-    
-    public async Task StartAsync()
-    {
-        _listener.Start();
-        Console.WriteLine($"Server start, listening: {string.Join(", ", _listener.Prefixes)}");
-
-        try
-        {
-            while (!_cts.IsCancellationRequested)
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost
+            .UseUrls(urls)
+            .ConfigureServices(services =>
             {
-                var context = await _listener.GetContextAsync().ConfigureAwait(false);
-                _ = ProcessRequestAsync(context); // fire-and-forget
-            }
-        }
-        catch (HttpListenerException) when (_cts.IsCancellationRequested)
-        {
+                // опционально: services.AddEndpointsApiExplorer();
+            });
 
+        _app = builder.Build();
+    }
+
+    public void RegisterRequestHandler<TWebServerRequestHandler>()
+        where TWebServerRequestHandler : class, IWebServerRequestHandler, new()
+    {
+        var type = typeof(TWebServerRequestHandler);
+        if (_registeredRequestHandlers.ContainsKey(type)) return;
+        
+        var handler = new TWebServerRequestHandler();
+        _registeredRequestHandlers[type] = handler.Pattern;
+        
+        if (!_registeredRequestComposers.TryGetValue(handler.Pattern, out var composer))
+        {
+            composer = new WebServerRequestComposer();
+            _registeredRequestComposers[handler.Pattern] = composer;
         }
+            
+        composer.AddHandler(handler);
     }
     
-    public void Stop()
+    public void UnregisterRequestHandler<TWebServerRequestHandler>()
+        where TWebServerRequestHandler : class, IWebServerRequestHandler, new()
     {
-        IsStopOnCancelKeyPressed = false;
-        _cts.Cancel();
-        _listener.Stop();
-        Console.WriteLine("Server stopped.");
+        var type = typeof(TWebServerRequestHandler);
+        if (!_registeredRequestHandlers.Remove(type, out var pattern)) return;
+        
+        var composer = _registeredRequestComposers[pattern];
+        if (composer.RemoveHandler<TWebServerRequestHandler>(out var handler) && composer.HandlersCount == 0)
+        {
+            _registeredRequestComposers.Remove(pattern);
+        }
     }
+
+    public Task StartAsync()
+    {
+        var task = _app.StartAsync();
+        Console.WriteLine($"Server start, listening URLs: {string.Join(", ", _app.Urls)}");
+        return task;
+    }
+
+    public Task StopAsync()
+    {
+        var task = _app.StopAsync();
+        IsStopOnCancelKeyPressed = false;
+        Console.WriteLine("Server stopped.");
+        return task;
+    }
+    
+    /*
     
     private static async Task ProcessRequestAsync(HttpListenerContext ctx)
     {
@@ -71,18 +96,18 @@ public class WebServer : IDisposable
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {ctx.Request.HttpMethod} {ctx.Request.Url} -> {responseString}");
     }
+    
+    */
 
     public void Dispose()
     {
-        Stop();
-        ((IDisposable)_listener).Dispose();
-        _cts.Dispose();
+        StopAsync().Wait();
     }
 
     private void OnCancelKeyPressed(object? sender, ConsoleCancelEventArgs e)
     {
         Console.WriteLine("Completion signal is received - shutting down...");
-        Stop();
+        StopAsync().Wait();
         e.Cancel = true;
     }
 }
