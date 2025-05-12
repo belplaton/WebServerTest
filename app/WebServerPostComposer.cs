@@ -9,24 +9,31 @@ public sealed class WebServerPostComposer : WebServerRequestComposer<WebServerPo
         var sb = new StringBuilder();
         var method = context.Request.Method;            
         var path   = context.Request.Path + context.Request.QueryString;
+        int? lastStatusCode = null;
+        var differentStatusCodeCount = 0;
+        
         sb.AppendLine($"[{DateTime.Now:HH:mm:ss}] {method} {path} ->");
         using var enumerator = Handlers.GetEnumerator();
         while (enumerator.MoveNext())
         {
             string current;
+            int statusCode;
             try
             {
-                current = enumerator.Current.Value.HandleRequest(context);
+                enumerator.Current.Value.HandleRequest(context.Request, out current, out statusCode);
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = 500;
                 current = $"Error: {ex.Message}";
+                statusCode = 500;
             }
-
-            sb.AppendLine($"-> {current}");
+            
+            sb.AppendLine($"-> [{statusCode}] {current}");
+            if (lastStatusCode.HasValue && lastStatusCode.Value != statusCode) differentStatusCodeCount++;
+            lastStatusCode = statusCode;
         }
 
+        context.Response.StatusCode = differentStatusCodeCount == 0 ? lastStatusCode ?? 200 : 207;
         await context.Response.WriteAsync(sb.ToString());
     }
 

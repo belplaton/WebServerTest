@@ -10,6 +10,34 @@ public sealed class WebServer : IDisposable
 
         _app = builder.Build();
     }
+
+    #region Services
+
+    private readonly Dictionary<Type, IWebServerService> _services = new();
+    public void AddService<TWebServerService>(TWebServerService service)
+        where TWebServerService : class, IWebServerService
+    {
+        _services[typeof(TWebServerService)] = service;
+    }
+
+    public bool TryGetService<TWebServerService>(out TWebServerService? service)
+        where TWebServerService : class, IWebServerService
+    {
+        if (_services.TryGetValue(typeof(TWebServerService), out var serviceRaw))
+        {
+            service = (TWebServerService)serviceRaw;
+            return true;
+        }
+
+        service = null;
+        return false;
+    }
+    
+    public void RemoveService<TWebServerService>() where TWebServerService : class, IWebServerService
+        => _services.Remove(typeof(TWebServerService));
+    public void ClearServices() => _services.Clear();
+
+    #endregion
     
     #region Request Handlers
 
@@ -44,7 +72,7 @@ public sealed class WebServer : IDisposable
         {
             composer = new TWebServerRequestComposer();
             composer.Initialize(handler.Pattern, this, _app);
-            composers[composerType] = composerRaw = composer;
+            composers[composerType] = composer;
         }
         else composer = (TWebServerRequestComposer)composerRaw;
         

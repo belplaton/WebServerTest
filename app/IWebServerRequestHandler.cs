@@ -3,7 +3,7 @@ namespace waterb.app;
 public interface IWebServerRequestHandler
 {
     public string Pattern { get; }
-    public string HandleRequest(HttpContext context);
+    public void HandleRequest(HttpRequest request, out string response, out int statusCode);
     public void Initialize(WebServer server);
 }
 
