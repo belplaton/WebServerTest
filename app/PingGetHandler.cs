@@ -1,6 +1,6 @@
 namespace waterb.app;
 
-public sealed class PingRequestHandler : IWebServerRequestHandler
+public sealed class PingGetHandler : WebServerGetHandler
 {
     public string Pattern => "/ping";
     public string Get() => "pong!";

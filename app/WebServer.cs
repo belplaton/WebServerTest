@@ -2,11 +2,12 @@ namespace waterb.app;
 
 public sealed class WebServer : IDisposable
 {
-    private readonly WebApplication  _app;
+    private readonly WebApplication _app;
     private bool _isListeningToCancelKeyPress;
 
     private readonly Dictionary<Type, string> _registeredRequestHandlers = new();
-    private readonly Dictionary<string, WebServerRequestComposer> _registeredRequestComposers = new();
+    private readonly Dictionary<string,
+        Dictionary<Type, IWebServerRequestComposer>> _registeredRequestComposers = new();
 
     public bool IsStopOnCancelKeyPressed
     {
@@ -28,34 +29,51 @@ public sealed class WebServer : IDisposable
         _app = builder.Build();
     }
 
-    public void RegisterRequestHandler<TWebServerRequestHandler>()
-        where TWebServerRequestHandler : class, IWebServerRequestHandler, new()
+    public void RegisterRequestHandler<TWebServerRequestComposer, TWebServerRequestHandler>()
+        where TWebServerRequestComposer : WebServerRequestComposer<
+            TWebServerRequestComposer, TWebServerRequestHandler>, new()
+        where TWebServerRequestHandler : WebServerRequestHandler<
+            TWebServerRequestComposer, TWebServerRequestHandler>, new()
     {
-        var type = typeof(TWebServerRequestHandler);
-        if (_registeredRequestHandlers.ContainsKey(type)) return;
+        var handlerType = typeof(TWebServerRequestHandler);
+        var composerType = typeof(TWebServerRequestComposer);
+        if (_registeredRequestHandlers.ContainsKey(handlerType)) return;
         
         var handler = new TWebServerRequestHandler();
         handler.Initialize(this);
-        _registeredRequestHandlers[type] = handler.Pattern;
+        _registeredRequestHandlers[handlerType] = handler.Pattern;
         
-        if (!_registeredRequestComposers.TryGetValue(handler.Pattern, out var composer))
+        if (!_registeredRequestComposers.TryGetValue(handler.Pattern, out var composers))
         {
-            composer = new WebServerRequestComposer();
-            _registeredRequestComposers[handler.Pattern] = composer;
-            _app.MapGet(handler.Pattern, composer.Compose);
+            composers = new Dictionary<Type, IWebServerRequestComposer>();
+            _registeredRequestComposers[handler.Pattern] = composers;
         }
+
+        TWebServerRequestComposer composer;
+        if (!composers.TryGetValue(composerType, out var composerRaw))
+        {
+            composer = new TWebServerRequestComposer();
+            composer.Initialize(handler.Pattern, this, _app);
+            composers[composerType] = composerRaw = composer;
+        }
+        else composer = (TWebServerRequestComposer)composerRaw;
         
-            
         composer.AddHandler(handler);
     }
     
-    public void UnregisterRequestHandler<TWebServerRequestHandler>()
-        where TWebServerRequestHandler : class, IWebServerRequestHandler, new()
+    public void UnregisterRequestHandler<TWebServerRequestComposer, TWebServerRequestHandler>()
+        where TWebServerRequestComposer : WebServerRequestComposer<
+            TWebServerRequestComposer, TWebServerRequestHandler>, new()
+        where TWebServerRequestHandler : WebServerRequestHandler<
+            TWebServerRequestComposer, TWebServerRequestHandler>, new()
     {
-        var type = typeof(TWebServerRequestHandler);
-        if (!_registeredRequestHandlers.Remove(type, out var pattern)) return;
+        var handlerType = typeof(TWebServerRequestHandler);
+        var composerType = typeof(TWebServerRequestComposer);
+        if (!_registeredRequestHandlers.Remove(handlerType, out var pattern)) return;
         
-        var composer = _registeredRequestComposers[pattern];
+        var composers = _registeredRequestComposers[pattern];
+        var composer = (TWebServerRequestComposer)composers[composerType];
+        
         composer.RemoveHandler<TWebServerRequestHandler>();
     }
 

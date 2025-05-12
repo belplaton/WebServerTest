@@ -1,6 +1,6 @@
 namespace waterb.app;
 
-public sealed class DefaultRequestHandler : IWebServerRequestHandler
+public sealed class DefaultGetHandler : WebServerGetHandler
 {
     public string Pattern => "/";
     public string Get() => "Hello, world!";
