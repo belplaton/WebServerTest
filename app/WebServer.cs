@@ -3,24 +3,6 @@ namespace waterb.app;
 public sealed class WebServer : IDisposable
 {
     private readonly WebApplication _app;
-    private bool _isListeningToCancelKeyPress;
-
-    private readonly Dictionary<Type, string> _registeredRequestHandlers = new();
-    private readonly Dictionary<string,
-        Dictionary<Type, IWebServerRequestComposer>> _registeredRequestComposers = new();
-
-    public bool IsStopOnCancelKeyPressed
-    {
-        get => _isListeningToCancelKeyPress;
-        set
-        {
-            if (_isListeningToCancelKeyPress == value) return;
-            _isListeningToCancelKeyPress = value;
-            if (value) Console.CancelKeyPress += OnCancelKeyPressed;
-            else Console.CancelKeyPress -= OnCancelKeyPressed;
-        }
-    }
-    
     public WebServer(params string[] urls)
     {
         var builder = WebApplication.CreateBuilder();
@@ -28,7 +10,13 @@ public sealed class WebServer : IDisposable
 
         _app = builder.Build();
     }
+    
+    #region Request Handlers
 
+    private readonly Dictionary<Type, string> _registeredRequestHandlers = new();
+    private readonly Dictionary<string, Dictionary<Type, IWebServerRequestComposer>> 
+        _registeredRequestComposers = new();
+    
     public void RegisterRequestHandler<
         TWebServerRequestComposer, TWebServerRequestHandler, MWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
@@ -81,6 +69,23 @@ public sealed class WebServer : IDisposable
         composer.RemoveHandler<MWebServerRequestHandler>();
     }
 
+    #endregion
+    
+    #region Life Cycle
+    
+    private bool _isListeningToCancelKeyPress;
+    public bool IsStopOnCancelKeyPressed
+    {
+        get => _isListeningToCancelKeyPress;
+        set
+        {
+            if (_isListeningToCancelKeyPress == value) return;
+            _isListeningToCancelKeyPress = value;
+            if (value) Console.CancelKeyPress += OnCancelKeyPressed;
+            else Console.CancelKeyPress -= OnCancelKeyPressed;
+        }
+    }
+    
     public Task StartAsync()
     {
         var task = _app.StartAsync();
@@ -114,4 +119,6 @@ public sealed class WebServer : IDisposable
         StopAsync().Wait();
         e.Cancel = true;
     }
+    
+    #endregion
 }

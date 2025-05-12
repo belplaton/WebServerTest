@@ -1,10 +1,17 @@
 namespace waterb.app;
 
-public sealed class BloomCreateGetHandler : WebServerGetHandler
+public sealed class BloomCreateGetHandler : WebServerPostHandler
 {
-    public string Pattern => "/bloom/create";
-    public string Get() => throw new NotSupportedException();
-    public void Initialize(WebServer server) { /* здесь можно сохранять сервер */ }
+    private WebServer _webServer;
+    
+    public override string Pattern => "/bloom/create";
+    public override string HandleRequest(HttpContext context)
+    {
+        
+    }
+    
+    public override void Initialize(WebServer server) {}
+    
     
     public void Post(HttpContext ctx)
     {
