@@ -5,9 +5,9 @@ namespace waterb.app;
 public sealed class BloomFilter<T> : IWebServerService
 {
     private readonly BitArray _bits;
-    private readonly Func<T, uint>[] _hashes;
+    private readonly IHashFunction<T>[] _hashes;
 
-    public BloomFilter(int size, params Func<T, uint>[] hashFunctions)
+    public BloomFilter(int size, params IHashFunction<T>[] hashFunctions)
     {
         _bits = new BitArray(size);
         _hashes = hashFunctions;
@@ -17,7 +17,7 @@ public sealed class BloomFilter<T> : IWebServerService
     {
         for (var i = 0; i < _hashes.Length; i++)
         {
-            var pos = (int)(_hashes[i](item) % (uint)_bits.Length);
+            var pos = (int)(_hashes[i].Process(item) % (uint)_bits.Length);
             _bits.Set(pos, true);
         }
     }
@@ -26,7 +26,7 @@ public sealed class BloomFilter<T> : IWebServerService
     {
         for (var i = 0; i < _hashes.Length; i++)
         {
-            var pos = (int)(_hashes[i](item) % (uint)_bits.Length);
+            var pos = (int)(_hashes[i].Process(item) % (uint)_bits.Length);
             if (!_bits.Get(pos)) return false;
         }
         

@@ -4,7 +4,7 @@ public interface IWebServerRequestHandler
 {
     public string Pattern { get; }
     public void HandleRequest(HttpRequest request, out string response, out int statusCode);
-    public void Initialize(WebServer server);
+    public void Initialize(WebServer? server);
 }
 
 public interface IWebServerRequestHandler<

@@ -9,5 +9,5 @@ public sealed class DefaultGetHandler : WebServerGetHandler
         statusCode = 200;
     }
 
-    public override void Initialize(WebServer server) {}
+    public override void Initialize(WebServer? server) {}
 }

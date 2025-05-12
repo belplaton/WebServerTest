@@ -8,5 +8,5 @@ public abstract class WebServerRequestHandler<
 {
     public abstract string Pattern { get; }
     public abstract void HandleRequest(HttpRequest request, out string response, out int statusCode);
-    public abstract void Initialize(WebServer server);
+    public abstract void Initialize(WebServer? server);
 }
