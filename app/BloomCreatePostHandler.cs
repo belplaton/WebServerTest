@@ -21,6 +21,11 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
             data.Size,
             data.Hashes.Select(CreateHash).ToArray()
         );
+        
+        // во время инициализации мы берем набор строк в которых описано какие хэши мы будем юзать
+        // хэши будут структурами, которые будут храниться в статическом классе напротив строк - их названий
+        // а создаваться хэши будут на основе интерфейса, а храниться там - посредством статического конструктора
+        // и сбора данных по всему application
 
         _webServer.AddService(bloomFilter);
         response = "OK";
