@@ -2,8 +2,7 @@ namespace waterb.app;
 
 public sealed class PingGetHandler : WebServerGetHandler
 {
-    public string Pattern => "/ping";
-    public string Get() => "pong!";
-    
-    public void Initialize(WebServer server) {}
+    public override string Pattern => "/ping";
+    public override string HandleRequest(HttpContext context) => "pong!";
+    public override void Initialize(WebServer server) {}
 }

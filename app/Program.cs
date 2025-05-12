@@ -14,8 +14,8 @@ internal static class Program
         try
         {
             server = new WebServer(prefix);
-            server.RegisterRequestHandler<DefaultGetHandler>();
-            server.RegisterRequestHandler<PingGetHandler>();
+            server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, DefaultGetHandler>();
+            server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, PingGetHandler>();
             
             server.IsStopOnCancelKeyPressed = true;
             server.RunAsync().GetAwaiter().GetResult();

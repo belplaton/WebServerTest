@@ -2,8 +2,7 @@ namespace waterb.app;
 
 public sealed class DefaultGetHandler : WebServerGetHandler
 {
-    public string Pattern => "/";
-    public string Get() => "Hello, world!";
-    
-    public void Initialize(WebServer server) {}
+    public override string Pattern => "/";
+    public override string HandleRequest(HttpContext context) => "Hello, world!";
+    public override void Initialize(WebServer server) {}
 }

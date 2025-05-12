@@ -29,17 +29,19 @@ public sealed class WebServer : IDisposable
         _app = builder.Build();
     }
 
-    public void RegisterRequestHandler<TWebServerRequestComposer, TWebServerRequestHandler>()
+    public void RegisterRequestHandler<
+        TWebServerRequestComposer, TWebServerRequestHandler, MWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
             TWebServerRequestComposer, TWebServerRequestHandler>, new()
         where TWebServerRequestHandler : WebServerRequestHandler<
-            TWebServerRequestComposer, TWebServerRequestHandler>, new()
+            TWebServerRequestComposer, TWebServerRequestHandler>
+        where MWebServerRequestHandler : TWebServerRequestHandler, new()
     {
         var handlerType = typeof(TWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
         if (_registeredRequestHandlers.ContainsKey(handlerType)) return;
         
-        var handler = new TWebServerRequestHandler();
+        var handler = new MWebServerRequestHandler();
         handler.Initialize(this);
         _registeredRequestHandlers[handlerType] = handler.Pattern;
         
@@ -61,11 +63,13 @@ public sealed class WebServer : IDisposable
         composer.AddHandler(handler);
     }
     
-    public void UnregisterRequestHandler<TWebServerRequestComposer, TWebServerRequestHandler>()
+    public void UnregisterRequestHandler<
+        TWebServerRequestComposer, TWebServerRequestHandler, MWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
             TWebServerRequestComposer, TWebServerRequestHandler>, new()
         where TWebServerRequestHandler : WebServerRequestHandler<
-            TWebServerRequestComposer, TWebServerRequestHandler>, new()
+            TWebServerRequestComposer, TWebServerRequestHandler>
+        where MWebServerRequestHandler : TWebServerRequestHandler, new()
     {
         var handlerType = typeof(TWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
@@ -74,7 +78,7 @@ public sealed class WebServer : IDisposable
         var composers = _registeredRequestComposers[pattern];
         var composer = (TWebServerRequestComposer)composers[composerType];
         
-        composer.RemoveHandler<TWebServerRequestHandler>();
+        composer.RemoveHandler<MWebServerRequestHandler>();
     }
 
     public Task StartAsync()
