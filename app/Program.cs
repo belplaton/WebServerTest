@@ -14,8 +14,8 @@ internal static class Program
         try
         {
             server = new WebServer(prefix);
-            server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, DefaultGetHandler>();
-            server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, PingGetHandler>();
+            server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, DefaultGetHandler>()
+                .RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, PingGetHandler>();
             
             server.RegisterRequestHandler<WebServerPostComposer, WebServerPostHandler, BloomCreatePostHandler>()
                 .RegisterRequestHandler<WebServerPostComposer, WebServerPostHandler, BloomAddPostHandler>()
