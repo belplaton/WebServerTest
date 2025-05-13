@@ -33,7 +33,6 @@ internal static class Program
         finally
         {
             server?.Dispose();
-            Console.WriteLine("Server stopped.");
         }
     }
 }
