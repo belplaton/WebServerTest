@@ -32,4 +32,6 @@ public sealed class BloomFilter<T>
         
         return true;
     }
+
+    public void Clear() => _bits.SetAll(false);
 }

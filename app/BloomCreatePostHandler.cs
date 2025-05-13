@@ -11,10 +11,10 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
     public override async Task<WebServerRequestResponse> HandleRequest(HttpRequest request)
     {
         var dataPayload = await new StreamReader(request.Body).ReadToEndAsync();
-        BloodCreateData? data;
+        BloomCreateData? data;
         try
         {
-            data = JsonSerializer.Deserialize<BloodCreateData>(dataPayload);
+            data = JsonSerializer.Deserialize<BloomCreateData>(dataPayload);
         }
         catch
         {
@@ -58,7 +58,7 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
                 statusCode = 404
             };
         }
-
+        
         var bloomFilter = new BloomFilter<string>(data.size, hashFunctions);
         if (!_webServer!.TryGetService<BloomFilterProvider<string>>(out var provider))
         {
@@ -66,10 +66,12 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
             _webServer.AddService(provider);
         }
         
-        provider!.Set(data.filterName, bloomFilter);
+        var isOverride = provider!.TryGet(data.filterName, out _);
+        provider.Set(data.filterName, bloomFilter);
         return new WebServerRequestResponse
         {
-            response = $"Bloom filter with name \"{data.filterName}\" was successfully created.", 
+            response = $"Bloom filter with name \"{data.filterName}\"" +
+                $"was successfully {(isOverride ? "override" : "created")}.", 
             statusCode = 201
         };
     }
@@ -79,5 +81,5 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
         _webServer = server; 
     }
     
-    private record BloodCreateData(string filterName, int size, string[] hashes);
+    private record BloomCreateData(string filterName, int size, string[] hashes);
 }

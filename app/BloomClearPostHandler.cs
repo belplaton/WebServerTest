@@ -2,18 +2,18 @@ using System.Text.Json;
 
 namespace waterb.app;
 
-public sealed class BloomAddPostHandler : WebServerPostHandler
+public sealed class BloomClearPostHandler : WebServerPostHandler
 {
     private WebServer? _server;
-    public override string Pattern => "/bloom/add";
+    public override string Pattern => "/bloom/clear";
 
     public override async Task<WebServerRequestResponse> HandleRequest(HttpRequest request)
     {
         var dataPayload = await new StreamReader(request.Body).ReadToEndAsync();
-        BloomAddData? data;
+        BloomClearData? data;
         try
         {
-            data = JsonSerializer.Deserialize<BloomAddData>(dataPayload);
+            data = JsonSerializer.Deserialize<BloomClearData>(dataPayload);
         }
         catch
         {
@@ -26,8 +26,7 @@ public sealed class BloomAddPostHandler : WebServerPostHandler
             {
                 response = "Invalid request. Please follow this form:\n" +
                            "{\n" +
-                           "\t\"filterName:\" <string>,\n" +
-                           "\t\"value:\" <string>\n" +
+                           "\t\"filterName:\" <string>\n" +
                            "}",
                 statusCode = 400
             };
@@ -38,20 +37,20 @@ public sealed class BloomAddPostHandler : WebServerPostHandler
         {
             return new WebServerRequestResponse
             {
-                response = $"Bloom filter with name \"{data.filterName}\" is not found.",
+                response = $"Bloom filter with name {data.filterName} is not found.",
                 statusCode = 404
             };
         }
 
-        filter!.Add(data.value);
+        filter!.Clear();
         return new WebServerRequestResponse
         {
-            response = $"Successfully added new value \"{data.value}\" to bloom filter with name \"{data.filterName}\".", 
+            response = $"Bloom filter with name \"{data.filterName}\" is successfully cleared.", 
             statusCode = 200
         };
     }
 
     public override void Initialize(WebServer? server) => _server = server;
 
-    private record BloomAddData(string filterName, string value);
+    private record BloomClearData(string filterName);
 }

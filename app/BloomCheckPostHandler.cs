@@ -10,10 +10,10 @@ public sealed class BloomCheckPostHandler : WebServerPostHandler
     public override async Task<WebServerRequestResponse> HandleRequest(HttpRequest request)
     {
         var dataPayload = await new StreamReader(request.Body).ReadToEndAsync();
-        BloodRemoveData? data;
+        BloomCheckData? data;
         try
         {
-            data = JsonSerializer.Deserialize<BloodRemoveData>(dataPayload);
+            data = JsonSerializer.Deserialize<BloomCheckData>(dataPayload);
         }
         catch
         {
@@ -34,7 +34,7 @@ public sealed class BloomCheckPostHandler : WebServerPostHandler
         }
 
         if (!_server!.TryGetService<BloomFilterProvider<string>>(out var provider) ||
-            !provider!.TryRemove(data.filterName, out var filter))
+            !provider!.TryGet(data.filterName, out var filter))
         {
             return new WebServerRequestResponse
             {
@@ -43,15 +43,15 @@ public sealed class BloomCheckPostHandler : WebServerPostHandler
             };
         }
 
-        filter!.Add(data.value);
         return new WebServerRequestResponse
         {
-            response = $"Bloom filter {(filter!.Contains(data.value) ? "is" : "is not")} contains {data.value}.", 
+            response = $"Bloom filter with name \"{data.filterName}\"" +
+                       $"{(filter!.Contains(data.value) ? "is" : "is not")} contains {data.value}.", 
             statusCode = 200
         };
     }
 
     public override void Initialize(WebServer? server) => _server = server;
 
-    private record BloodRemoveData(string filterName, string value);
+    private record BloomCheckData(string filterName, string value);
 }
