@@ -1,0 +1,39 @@
+GET:
+1. /
+
+2. /ping
+
+3. /bloom/check
+   BODY:
+   {
+        "filterName": "UwU",
+	    "value": "chimera"
+   }
+
+POST:
+1. /bloom/create
+   BODY:
+   {
+        "filterName": "UwU",
+		"size": 200,
+	    "hashes": ["md5", "sha256"]
+   }
+   
+2. /bloom/add
+   BODY:
+   {
+        "filterName": "UwU",
+		"value": "vampire"
+   }
+   
+3. /bloom/clear
+   BODY:
+   {
+        "filterName": "UwU"
+   }
+   
+4. /bloom/remove
+   BODY:
+   {
+        "filterName": "UwU"
+   }
