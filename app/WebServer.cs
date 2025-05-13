@@ -46,18 +46,18 @@ public sealed class WebServer : IDisposable
         _registeredRequestComposers = new();
     
     public void RegisterRequestHandler<
-        TWebServerRequestComposer, TWebServerRequestHandler, MWebServerRequestHandler>()
+        TWebServerRequestComposer, TBaseWebServerRequestHandler, TRealWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
-            TWebServerRequestComposer, TWebServerRequestHandler>, new()
-        where TWebServerRequestHandler : WebServerRequestHandler<
-            TWebServerRequestComposer, TWebServerRequestHandler>
-        where MWebServerRequestHandler : TWebServerRequestHandler, new()
+            TWebServerRequestComposer, TBaseWebServerRequestHandler>, new()
+        where TBaseWebServerRequestHandler : WebServerRequestHandler<
+            TWebServerRequestComposer, TBaseWebServerRequestHandler>
+        where TRealWebServerRequestHandler : TBaseWebServerRequestHandler, new()
     {
-        var handlerType = typeof(TWebServerRequestHandler);
+        var handlerType = typeof(TRealWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
         if (_registeredRequestHandlers.ContainsKey(handlerType)) return;
         
-        var handler = new MWebServerRequestHandler();
+        var handler = new TRealWebServerRequestHandler();
         handler.Initialize(this);
         _registeredRequestHandlers[handlerType] = handler.Pattern;
         
@@ -80,21 +80,21 @@ public sealed class WebServer : IDisposable
     }
     
     public void UnregisterRequestHandler<
-        TWebServerRequestComposer, TWebServerRequestHandler, MWebServerRequestHandler>()
+        TWebServerRequestComposer, TBaseWebServerRequestHandler, TRealWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
-            TWebServerRequestComposer, TWebServerRequestHandler>, new()
-        where TWebServerRequestHandler : WebServerRequestHandler<
-            TWebServerRequestComposer, TWebServerRequestHandler>
-        where MWebServerRequestHandler : TWebServerRequestHandler, new()
+            TWebServerRequestComposer, TBaseWebServerRequestHandler>, new()
+        where TBaseWebServerRequestHandler : WebServerRequestHandler<
+            TWebServerRequestComposer, TBaseWebServerRequestHandler>
+        where TRealWebServerRequestHandler : TBaseWebServerRequestHandler, new()
     {
-        var handlerType = typeof(TWebServerRequestHandler);
+        var handlerType = typeof(TRealWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
         if (!_registeredRequestHandlers.Remove(handlerType, out var pattern)) return;
         
         var composers = _registeredRequestComposers[pattern];
         var composer = (TWebServerRequestComposer)composers[composerType];
         
-        composer.RemoveHandler<MWebServerRequestHandler>();
+        composer.RemoveHandler<TRealWebServerRequestHandler>();
     }
 
     #endregion

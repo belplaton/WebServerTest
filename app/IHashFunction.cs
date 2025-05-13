@@ -4,37 +4,38 @@ namespace waterb.app;
 
 public interface IHashFunction
 {
-    private static readonly Dictionary<Type, Dictionary<string, List<IHashFunction>>> _hashFunctions = new();
+    private static readonly List<Type> _rawGenericHashTypes = [];
+    private static readonly Dictionary<string, List<Type>> _cachedBaseHashTypes = new();
+    private static readonly Dictionary<Type, Dictionary<string, List<Type>>> _cachedGenericHashTypes = new();
     
     static IHashFunction()
     {
         var hashFunctionTypes = AppDomain.CurrentDomain
             .GetAssemblies().Where(a => !a.IsDynamic)
             .SelectMany(TryGetTypesSafely)
-            .Where(t => t is { IsValueType: true, IsEnum: false } && 
-                typeof(IHashFunction<>).IsAssignableFrom(t));
+            .Where(t => t is { IsInterface: false, IsAbstract: false } &&
+                typeof(IHashFunction).IsAssignableFrom(t)).Select(t => t!);
 
         foreach (var hashFunctionType in hashFunctionTypes)
         {
-            if (hashFunctionType != null)
+            var interfaceType = hashFunctionType.GetInterfaces().FirstOrDefault(
+                t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IHashFunction<>));
+            if (interfaceType != null)
             {
-                var interfaceType = hashFunctionType.GetInterfaces().FirstOrDefault(
-                    t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IHashFunction<>));
-                var processableType = interfaceType!.GetGenericArguments()[0];
-                
-                var hashFunction = (IHashFunction)Activator.CreateInstance(hashFunctionType)!;
-                if (!_hashFunctions.TryGetValue(processableType, out var typedHashFunctions))
+                if (hashFunctionType.IsGenericType)
                 {
-                    _hashFunctions[processableType] = typedHashFunctions = 
-                        new Dictionary<string, List<IHashFunction>>();
+                    _rawGenericHashTypes.Add(hashFunctionType);
                 }
-                
-                if (!typedHashFunctions.TryGetValue(hashFunction.HashName, out var hashFunctions))
+                else
                 {
-                    typedHashFunctions[hashFunction.HashName] = hashFunctions = [];
+                    var baseHashFunction = (IHashFunction)Activator.CreateInstance(hashFunctionType)!;
+                    if (!_cachedBaseHashTypes.TryGetValue(baseHashFunction.HashName, out var hashTypes))
+                    {
+                        _cachedBaseHashTypes[baseHashFunction.HashName] = hashTypes = [];
+                    }
+                    
+                    hashTypes.Add(hashFunctionType);
                 }
-                
-                hashFunctions.Add(hashFunction);
             }
         }
     }
@@ -45,22 +46,42 @@ public interface IHashFunction
         catch (ReflectionTypeLoadException e) { return e.Types.Where(t => t != null); }
     }
     
-    
-    public static bool TryGetHashFunctions<TProcessableType>(
-        string name, out IReadOnlyList<IHashFunction>? functions)
+    public static bool CreateHashFunctions<TProcessableType>(
+        string name, out List<IHashFunction<TProcessableType>>? functions)
     {
         functions = null;
-        if (!_hashFunctions.TryGetValue(typeof(TProcessableType), out var hashFunctions))
+        if (!_cachedGenericHashTypes.TryGetValue(typeof(TProcessableType), out var namedHashFunctions))
+        {
+            functions = [];
+            _cachedGenericHashTypes[typeof(TProcessableType)] = namedHashFunctions = [];
+            for (var i = 0; i < _rawGenericHashTypes.Count; i++)
+            {
+                var hashFunctionType = _rawGenericHashTypes[i].MakeGenericType(typeof(TProcessableType));
+                var baseHashFunction = (IHashFunction<TProcessableType>)Activator.CreateInstance(hashFunctionType)!;
+                if (!namedHashFunctions.TryGetValue(baseHashFunction.HashName, out var hashTypes))
+                {
+                    namedHashFunctions[baseHashFunction.HashName] = hashTypes = [];
+                }
+                
+                hashTypes.Add(hashFunctionType);
+                functions.Add(baseHashFunction);
+            }
+            
+            return functions.Count > 0;
+        }
+        
+        if (!namedHashFunctions.TryGetValue(name, out var functionsTypes) || functionsTypes.Count == 0)
         {
             return false;
         }
 
-        if (!hashFunctions.TryGetValue(name, out var functionsRaw))
+        functions = new List<IHashFunction<TProcessableType>>(functionsTypes.Count);
+        for (var i = 0; i < functionsTypes.Count; i++)
         {
-            return false;
+            var baseHashFunction = (IHashFunction<TProcessableType>)Activator.CreateInstance(functionsTypes[i])!;
+            functions.Add(baseHashFunction);
         }
-        
-        functions = functionsRaw;
+
         return true;
     }
     

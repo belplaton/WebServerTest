@@ -1,9 +1,15 @@
 namespace waterb.app;
 
+public struct WebServerRequestResponse
+{
+    public string response;
+    public int statusCode;
+}
+
 public interface IWebServerRequestHandler
 {
     public string Pattern { get; }
-    public void HandleRequest(HttpRequest request, out string response, out int statusCode);
+    public Task<WebServerRequestResponse> HandleRequest(HttpRequest request);
     public void Initialize(WebServer? server);
 }
 

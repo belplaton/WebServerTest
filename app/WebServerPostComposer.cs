@@ -20,7 +20,9 @@ public sealed class WebServerPostComposer : WebServerRequestComposer<WebServerPo
             int statusCode;
             try
             {
-                enumerator.Current.Value.HandleRequest(context.Request, out current, out statusCode);
+                var response = enumerator.Current.Value.HandleRequest(context.Request).Result;
+                current = response.response;
+                statusCode = response.statusCode;
             }
             catch (Exception ex)
             {

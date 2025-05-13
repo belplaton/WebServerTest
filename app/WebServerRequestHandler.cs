@@ -7,6 +7,6 @@ public abstract class WebServerRequestHandler<
     where TWebServerRequestHandler : WebServerRequestHandler<TWebServerRequestComposer, TWebServerRequestHandler>
 {
     public abstract string Pattern { get; }
-    public abstract void HandleRequest(HttpRequest request, out string response, out int statusCode);
+    public abstract Task<WebServerRequestResponse> HandleRequest(HttpRequest request);
     public abstract void Initialize(WebServer? server);
 }

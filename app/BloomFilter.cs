@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace waterb.app;
 
-public sealed class BloomFilter<T> : IWebServerService
+public sealed class BloomFilter<T>
 {
     private readonly BitArray _bits;
     private readonly IHashFunction<T>[] _hashes;

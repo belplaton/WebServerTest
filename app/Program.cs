@@ -17,6 +17,8 @@ internal static class Program
             server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, DefaultGetHandler>();
             server.RegisterRequestHandler<WebServerGetComposer, WebServerGetHandler, PingGetHandler>();
             
+            server.RegisterRequestHandler<WebServerPostComposer, WebServerPostHandler, BloomCreatePostHandler>();
+            
             server.IsStopOnCancelKeyPressed = true;
             server.RunAsync().GetAwaiter().GetResult();
         }

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace waterb.app;
 
-public class MD5HashFunction<TProcessableType> : IHashFunction<TProcessableType>
+public sealed class MD5HashFunction<TProcessableType> : IHashFunction<TProcessableType>
 {
     public string HashName => "md5";
     public uint Process(TProcessableType value)

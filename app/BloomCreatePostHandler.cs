@@ -8,43 +8,70 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
     private WebServer? _webServer;
     
     public override string Pattern => "/bloom/create";
-    public override void HandleRequest(HttpRequest request, out string response, out int statusCode)
+    public override async Task<WebServerRequestResponse> HandleRequest(HttpRequest request)
     {
-        var data = JsonSerializer.Deserialize<BloodCreateData>(new StreamReader(request.Body).ReadToEnd());
-        if (data == null)
+        var dataPayload = await new StreamReader(request.Body).ReadToEndAsync();
+        BloodCreateData? data;
+        try
         {
-            response = "Invalid request";
-            statusCode = 400;
-            return;
+            data = JsonSerializer.Deserialize<BloodCreateData>(dataPayload);
+        }
+        catch
+        {
+            data = null;
+        }
+
+        if (data is not { size: > 0 } || data.hashes.Length == 0)
+        {
+            return new WebServerRequestResponse
+            {
+                response = "Invalid request. Please follow this form:\n" +
+                   "{\n" +
+                   "\t\"filterName:\" <string>,\n" +
+                   "\t\"size:\" <int>,\n" +
+                   "\t\"hashes\": [...<string>]\n" +
+                   "}",
+                statusCode = 400
+            };
         }
 
         var isAnyFailedHashCode = false;
         var failedHashCodesSb = new StringBuilder();
-        var hashFunctions = data.Hashes.SelectMany(
+        var hashFunctions = data.hashes.SelectMany(
             hashName =>
             {
-                if (!IHashFunction.TryGetHashFunctions<string>(hashName, out var temp))
+                if (!IHashFunction.CreateHashFunctions<string>(hashName, out var temp))
                 {
                     failedHashCodesSb.Append($"{hashName}, ");
                     isAnyFailedHashCode = true;
                     return [];
                 }
 
-                return temp!.Select(hash => (IHashFunction<string>)hash);
+                return temp!;
             }).ToArray();
 
         if (isAnyFailedHashCode)
         {
-            response = $"Can`t find hash functions for this request: {failedHashCodesSb}";
-            statusCode = 404;
-            return;
+            return new WebServerRequestResponse
+            {
+                response = $"Can`t find hash functions for this request: {failedHashCodesSb}",
+                statusCode = 404
+            };
         }
 
-        var bloomFilter = new BloomFilter<string>(data.Size, hashFunctions);
-
-        _webServer!.AddService(bloomFilter);
-        response = "OK";
-        statusCode = 200;
+        var bloomFilter = new BloomFilter<string>(data.size, hashFunctions);
+        if (!_webServer!.TryGetService<BloomFilterProvider<string>>(out var provider))
+        {
+            provider = new BloomFilterProvider<string>();
+            _webServer.AddService(provider);
+        }
+        
+        provider!.Set(data.filterName, bloomFilter);
+        return new WebServerRequestResponse
+        {
+            response = $"Bloom filter with name \"{data.filterName}\" was successfully created.", 
+            statusCode = 201
+        };
     }
 
     public override void Initialize(WebServer? server)
@@ -52,5 +79,5 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
         _webServer = server; 
     }
     
-    private record BloodCreateData(int Size, int HashCount, string[] Hashes);
+    private record BloodCreateData(string filterName, int size, string[] hashes);
 }
