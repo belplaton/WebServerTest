@@ -45,7 +45,7 @@ public sealed class BloomCheckGetHandler : WebServerGetHandler
 
         return new WebServerRequestResponse
         {
-            response = $"Bloom filter with name \"{data.filterName}\"" +
+            response = $"Bloom filter with name \"{data.filterName}\" " +
                        $"{(filter!.Contains(data.value) ? "is" : "is not")} contains {data.value}.", 
             statusCode = 200
         };

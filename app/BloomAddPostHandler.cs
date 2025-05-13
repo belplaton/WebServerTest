@@ -20,15 +20,15 @@ public sealed class BloomAddPostHandler : WebServerPostHandler
             data = null;
         }
         
-        if (data == null)
+        if (data == null || string.IsNullOrEmpty(data.filterName) || string.IsNullOrEmpty(data.value))
         {
             return new WebServerRequestResponse
             {
                 response = "Invalid request. Please follow this form:\n" +
-                           "{\n" +
-                           "\t\"filterName:\" <string>,\n" +
-                           "\t\"value:\" <string>\n" +
-                           "}",
+                   "{\n" +
+                   "\t\"filterName:\" <string>,\n" +
+                   "\t\"value:\" <string>\n" +
+                   "}",
                 statusCode = 400
             };
         }

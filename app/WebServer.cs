@@ -45,7 +45,7 @@ public sealed class WebServer : IDisposable
     private readonly Dictionary<string, Dictionary<Type, IWebServerRequestComposer>> 
         _registeredRequestComposers = new();
     
-    public void RegisterRequestHandler<
+    public WebServer RegisterRequestHandler<
         TWebServerRequestComposer, TBaseWebServerRequestHandler, TRealWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
             TWebServerRequestComposer, TBaseWebServerRequestHandler>, new()
@@ -55,7 +55,7 @@ public sealed class WebServer : IDisposable
     {
         var handlerType = typeof(TRealWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
-        if (_registeredRequestHandlers.ContainsKey(handlerType)) return;
+        if (_registeredRequestHandlers.ContainsKey(handlerType)) return this;;
         
         var handler = new TRealWebServerRequestHandler();
         handler.Initialize(this);
@@ -77,9 +77,10 @@ public sealed class WebServer : IDisposable
         else composer = (TWebServerRequestComposer)composerRaw;
         
         composer.AddHandler(handler);
+        return this;
     }
     
-    public void UnregisterRequestHandler<
+    public WebServer UnregisterRequestHandler<
         TWebServerRequestComposer, TBaseWebServerRequestHandler, TRealWebServerRequestHandler>()
         where TWebServerRequestComposer : WebServerRequestComposer<
             TWebServerRequestComposer, TBaseWebServerRequestHandler>, new()
@@ -89,12 +90,13 @@ public sealed class WebServer : IDisposable
     {
         var handlerType = typeof(TRealWebServerRequestHandler);
         var composerType = typeof(TWebServerRequestComposer);
-        if (!_registeredRequestHandlers.Remove(handlerType, out var pattern)) return;
+        if (!_registeredRequestHandlers.Remove(handlerType, out var pattern)) return this;;
         
         var composers = _registeredRequestComposers[pattern];
         var composer = (TWebServerRequestComposer)composers[composerType];
         
         composer.RemoveHandler<TRealWebServerRequestHandler>();
+        return this;
     }
 
     #endregion

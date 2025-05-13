@@ -70,7 +70,7 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
         provider.Set(data.filterName, bloomFilter);
         return new WebServerRequestResponse
         {
-            response = $"Bloom filter with name \"{data.filterName}\"" +
+            response = $"Bloom filter with name \"{data.filterName}\" " +
                 $"was successfully {(isOverride ? "override" : "created")}.", 
             statusCode = 201
         };
