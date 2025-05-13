@@ -8,7 +8,7 @@ public sealed class SHA512HashFunction<TProcessableType> : IHashFunction<TProces
     public string HashName => "sha512";
     public uint Process(TProcessableType value)
     {
-        var sha512 = SHA512.Create();
+        using var sha512 = SHA512.Create();
         var hash = sha512.ComputeHash(Encoding.ASCII.GetBytes(value?.ToString() ?? string.Empty));
         return BitConverter.ToUInt32(hash, 0);
     }
