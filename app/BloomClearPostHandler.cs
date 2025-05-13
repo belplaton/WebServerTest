@@ -20,7 +20,7 @@ public sealed class BloomClearPostHandler : WebServerPostHandler
             data = null;
         }
         
-        if (data == null)
+        if (data == null || string.IsNullOrEmpty(data.filterName))
         {
             return new WebServerRequestResponse
             {

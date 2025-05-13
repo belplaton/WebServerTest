@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace waterb.app;
 
-public sealed class BloomCheckPostHandler : WebServerPostHandler
+public sealed class BloomCheckGetHandler : WebServerGetHandler
 {
     private WebServer? _server;
     public override string Pattern => "/bloom/check";
@@ -20,7 +20,7 @@ public sealed class BloomCheckPostHandler : WebServerPostHandler
             data = null;
         }
         
-        if (data == null)
+        if (data == null || string.IsNullOrEmpty(data.filterName) || string.IsNullOrEmpty(data.value))
         {
             return new WebServerRequestResponse
             {

@@ -21,7 +21,7 @@ public sealed class BloomCreatePostHandler : WebServerPostHandler
             data = null;
         }
 
-        if (data is not { size: > 0 } || data.hashes.Length == 0)
+        if (data is not { size: > 0 } || string.IsNullOrEmpty(data.filterName) || data.hashes.Length == 0)
         {
             return new WebServerRequestResponse
             {

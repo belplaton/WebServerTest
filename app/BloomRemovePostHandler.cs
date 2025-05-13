@@ -20,14 +20,14 @@ public sealed class BloomRemovePostHandler : WebServerPostHandler
             data = null;
         }
 
-        if (data == null)
+        if (data == null || string.IsNullOrEmpty(data.filterName))
         {
             return new WebServerRequestResponse
             {
                 response = "Invalid request. Please follow this form:\n" +
-                           "{\n" +
-                           "\t\"filterName:\" <string>\n" +
-                           "}",
+                   "{\n" +
+                   "\t\"filterName:\" <string>\n" +
+                   "}",
                 statusCode = 400
             };
         }
