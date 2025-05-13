@@ -7,7 +7,7 @@ GET:
    BODY:
    {
         "filterName": "UwU",
-	    "value": "chimera"
+	    "value": "vampire"
    }
 
 POST:
